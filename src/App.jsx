@@ -1,3 +1,6 @@
+// Importa o CSS para a pagina App.jsx
+import "./App.css"
+
 //Importa hook useSatate da biblioteca react
 //Ele permite armazenar valores e atualizar a tela automaticamente
 import { useState } from "react";
@@ -18,6 +21,52 @@ function App() {
   const [umidade, setUmidade] = useState("");
 
   //Função executada quando o usuario clicar no botão consultar
+  async function ConsultarClima() {
+
+    // Verifica se o campo esta vazio
+    if (cidade === "") {
+      alert("Digite uma cidade !");
+      return;
+    }
+
+    try {
+
+      // Faz a requisição para a Api
+      // CORRIGIDO: usar crase (`) em vez de aspas simples ('),
+      // para que ${cidade} seja interpretado como variável (template string)
+      const resposta = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=a6568d2a6228aafdb7bcf2c1226ffa99&units=metric&lang=pt_br`
+      );
+
+      // Converte a resposta para JSON
+      const dados = await resposta.json();
+
+      // Verifica se a cidade foi encontrada
+      if (dados.cod !== 200) {
+        alert("Cidade não encontrado");
+        return;
+      }
+
+      // Atualiza a temperatura
+      setTemperatura(dados.main.temp + "°C");
+
+      //Atualiza a condição climatica
+      setClima(dados.weather[0].description);
+
+      //Atualiza a umidade
+      setUmidade(dados.main.humidity + "%");
+
+    } catch (erro) {
+
+      console.log(erro);
+
+      alert("Erro ao consultar a API.")
+
+    }
+
+  }
+
+  /*Função executada quando o usuario clicar no botão consultar
   function consultarClima() {
 
     // Verifica se a cidade é são paulo
@@ -94,19 +143,19 @@ function App() {
 
       setUmidade("--");
     }
-  }
+  }*/
 
   //Retorna a interface visual do sistema
   return (
     // conteiner principal da aplicação
     <div
       style={{
-        pedding: "20px",
+        padding: "20px", // CORRIGIDO: "pedding" -> "padding"
         fontFamily: "Arial"
       }}
     >
       {/* Titulo Principal */}
-      <h1>Sistema de Preisão do Tempo</h1>
+      <h1>☀️Sistema de Previsão do Tempo</h1>
 
       {/*Campo para digitação */}
       <input
@@ -126,8 +175,10 @@ function App() {
       {/*Botão de consulta */}
       <button
 
-        //Execulta a função consultarclima
-        onClick={consultarClima}
+        //Execulta a função ConsultarClima
+        //CORRIGIDO: "consultarClima" (c minúsculo) -> "ConsultarClima" (C maiúsculo),
+        //igual ao nome da função declarada acima
+        onClick={ConsultarClima}
 
         // Define a margem a esquerda
         style={{
@@ -142,16 +193,16 @@ function App() {
       <hr />
 
       {/*Exibe a cidade */}
-      <h2>Cidade: {cidade}</h2>
+      <h2>🏙️Cidade: {cidade}</h2>
 
       {/*Exibe a temperatura */}
-      <h2>Temperatura: {temperatura}</h2>
+      <h2>🌡️Temperatura: {temperatura}</h2>
 
       {/*Exibe o clima */}
-      <h2>Clima: {clima}</h2>
+      <h2>⛅Clima: {clima}</h2>
 
       {/*Exibe a umidade */}
-      <h2>Umidade: {umidade}</h2>
+      <h2>🌬️Umidade: {umidade}</h2>
 
     </div>
 
