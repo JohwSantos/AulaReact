@@ -56,6 +56,82 @@ function App() {
       //Atualiza a umidade
       setUmidade(dados.main.humidity + "%");
 
+      // ===============================
+      // CONTEÚDO DA AULA DE HOJE
+      // Enviando dados do React para uma API própria
+      // utilizando o método POST.
+      // ===============================
+
+      // Faz uma requisição para a API de histórico criada pelos alunos
+      await fetch("http://localhost:3000/historico", {
+
+        // Define o método HTTP utilizado
+        method: "POST",
+
+        // Informa que os dados enviados estarão no formato JSON
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        // Converte o objeto JavaScript para JSON
+        body: JSON.stringify({
+
+          // Envia o nome da cidade consultada
+          cidade: cidade,
+
+          // Envia a temperatura retornada pela API OpenWeatherMap
+          temperatura: dados.main.temp + "°C",
+
+          // Envia a descrição do clima
+          clima: dados.weather[0].description,
+
+          // Envia a umidade do ar
+          umidade: dados.main.humidity + "%"
+
+        })
+
+      });
+
+      // Fim do conteúdo da aula
+      // Neste momento os dados foram enviados para a API
+      // e armazenados no histórico de consultas.
+
+      /* Conteudo da aula de hoje
+      // Enviando dados do React para uma API propia utilizando o metodo Post
+
+      // Faz a requisisão para a API ter historico criada por você
+      await fetch("http://localhost:3000/historico"), {
+
+
+        // Define o metodo HTTP utilizado
+        method: "POST",
+
+        //informa que os dados enviados estarao em formato JSON
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        // Converte o objeto JavaScript para JSON
+        body: JSON.stringify({
+
+          // Envia o nome da cidade consultada
+          cidade: cidade,
+
+          // Envia a temperatura retornada pela API OpenWeatherMap
+          temperatura: dados.main.temp + "°C",
+
+          // Envia a descrição do clima
+          clima: dados.weather[0].description,
+
+          // Envia  a umidade do ar
+          umidade: dados.main.humidity + "%",
+
+        })
+
+      });
+
+       Fim da primeira aula*/
+
     } catch (erro) {
 
       console.log(erro);
