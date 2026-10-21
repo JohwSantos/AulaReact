@@ -58,7 +58,7 @@ app.get("/historico", (req, res) => {
 });
 
 app.post("/historico", async (req, res) => {
-    historico.push(req, body);
+    historico.push(req.body);
 
     // Cria uma referencia chamada "historico" dentro do Firebase. Caso ela não exista o Firebase ira criar automaticamente
     const referenciaFirebase = ref(
