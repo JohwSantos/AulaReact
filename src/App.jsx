@@ -1,289 +1,162 @@
-// Importa o CSS para a pagina App.jsx
-import "./App.css"
-
-//Importa hook useSatate da biblioteca react
-//Ele permite armazenar valores e atualizar a tela automaticamente
 import { useState } from "react";
+import "./App.css";
 
-//Cria o componete pricipal da apliacação
 function App() {
-
-  //Estado responsavel por armazenar a cidade digitada
   const [cidade, setCidade] = useState("");
-
-  //Estado para armazenar a temperatura da cidade
   const [temperatura, setTemperatura] = useState("");
-
-  //Estado para armazenar o clima da cidade
   const [clima, setClima] = useState("");
-
-  //Estado par armazenar a umidade da cidade 
   const [umidade, setUmidade] = useState("");
+  const [weatherType, setWeatherType] = useState("default");
+  const [cidadeConsultada, setCidadeConsultada] = useState("");
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState("");
 
-  //Função executada quando o usuario clicar no botão consultar
-  async function ConsultarClima() {
+  async function ConsultarClima(event) {
+    event.preventDefault();
 
-    // Verifica se o campo esta vazio
-    if (cidade === "") {
-      alert("Digite uma cidade !");
+    const busca = cidade.trim();
+    if (!busca) {
+      setErro("Digite o nome de uma cidade para continuar.");
       return;
     }
 
+    setCarregando(true);
+    setErro("");
+
     try {
-
-      // Faz a requisição para a Api
-      // CORRIGIDO: usar crase (`) em vez de aspas simples ('),
-      // para que ${cidade} seja interpretado como variável (template string)
       const resposta = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=a6568d2a6228aafdb7bcf2c1226ffa99&units=metric&lang=pt_br`
+        `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(busca)}&appid=a6568d2a6228aafdb7bcf2c1226ffa99&units=metric&lang=pt_br`
       );
-
-      // Converte a resposta para JSON
       const dados = await resposta.json();
 
-      // Verifica se a cidade foi encontrada
-      if (dados.cod !== 200) {
-        alert("Cidade não encontrado");
+      if (!resposta.ok || dados.cod !== 200) {
+        setErro("Não encontramos essa cidade. Confira o nome e tente novamente.");
         return;
       }
 
-      // Atualiza a temperatura
-      setTemperatura(dados.main.temp + "°C");
+      const temperaturaAtual = `${Math.round(dados.main.temp)}°`;
+      const descricao = dados.weather[0].description;
+      const umidadeAtual = `${dados.main.humidity}%`;
+      const codigoClima = Number(dados.weather[0].id);
+      let tipoClima = "default";
 
-      //Atualiza a condição climatica
-      setClima(dados.weather[0].description);
+      if (codigoClima >= 200 && codigoClima < 300) tipoClima = "storm";
+      else if (codigoClima >= 300 && codigoClima < 600) tipoClima = "rain";
+      else if (codigoClima >= 600 && codigoClima < 700) tipoClima = "snow";
+      else if (codigoClima >= 700 && codigoClima < 800) tipoClima = "mist";
+      else if (codigoClima === 800) tipoClima = "clear";
+      else if (codigoClima > 800 && codigoClima < 900) tipoClima = "clouds";
 
-      //Atualiza a umidade
-      setUmidade(dados.main.humidity + "%");
+      setTemperatura(temperaturaAtual);
+      setClima(descricao);
+      setUmidade(umidadeAtual);
+      setCidadeConsultada(dados.name);
+      setWeatherType(tipoClima);
 
-      // ===============================
-      // CONTEÚDO DA AULA DE HOJE
-      // Enviando dados do React para uma API própria
-      // utilizando o método POST.
-      // ===============================
-
-      // Faz uma requisição para a API de histórico criada pelos alunos
       await fetch("http://localhost:3000/historico", {
-
-        // Define o método HTTP utilizado
         method: "POST",
-
-        // Informa que os dados enviados estarão no formato JSON
         headers: {
           "Content-Type": "application/json"
         },
-
-        // Converte o objeto JavaScript para JSON
         body: JSON.stringify({
-
-          // Envia o nome da cidade consultada
-          cidade: cidade,
-
-          // Envia a temperatura retornada pela API OpenWeatherMap
-          temperatura: dados.main.temp + "°C",
-
-          // Envia a descrição do clima
-          clima: dados.weather[0].description,
-
-          // Envia a umidade do ar
-          umidade: dados.main.humidity + "%"
-
+          cidade: dados.name,
+          temperatura: `${dados.main.temp}°C`,
+          clima: descricao,
+          umidade: umidadeAtual
         })
-
       });
-
-      // Fim do conteúdo da aula
-      // Neste momento os dados foram enviados para a API
-      // e armazenados no histórico de consultas.
-
-      /* Conteudo da aula de hoje
-      // Enviando dados do React para uma API propia utilizando o metodo Post
-
-      // Faz a requisisão para a API ter historico criada por você
-      await fetch("http://localhost:3000/historico"), {
-
-
-        // Define o metodo HTTP utilizado
-        method: "POST",
-
-        //informa que os dados enviados estarao em formato JSON
-        headers: {
-          "Content-Type": "application/json"
-        },
-
-        // Converte o objeto JavaScript para JSON
-        body: JSON.stringify({
-
-          // Envia o nome da cidade consultada
-          cidade: cidade,
-
-          // Envia a temperatura retornada pela API OpenWeatherMap
-          temperatura: dados.main.temp + "°C",
-
-          // Envia a descrição do clima
-          clima: dados.weather[0].description,
-
-          // Envia  a umidade do ar
-          umidade: dados.main.humidity + "%",
-
-        })
-
-      });
-
-       Fim da primeira aula*/
-
-    } catch (erro) {
-
-      console.log(erro);
-
-      alert("Erro ao consultar a API.")
-
+    } catch (error) {
+      console.error(error);
+      setErro("Não foi possível consultar o clima agora. Tente novamente em instantes.");
+    } finally {
+      setCarregando(false);
     }
-
   }
 
-  /*Função executada quando o usuario clicar no botão consultar
-  function consultarClima() {
-
-    // Verifica se a cidade é são paulo
-    if (
-      cidade.toLowerCase() === "São Paulo" ||
-      cidade.toLowerCase() === "sao Paulo"
-    ) {
-      //Essa linha de codigo atualiza a temperatura
-      setTemperatura("24°C");
-
-      //Atualiza a condição climatica
-      setClima("Ensolarado");
-
-      //Atualiza a umidade
-      setUmidade("60%");
-    }
-
-    else if (cidade.toLowerCase() === "coritiba") {
-
-      setTemperatura("17°G");
-
-      setClima("Chuvoso");
-
-      setUmidade("85%");
-
-    }
-
-    else if (cidade.toLowerCase() === "rio de janeiro") {
-
-      setTemperatura("32°G");
-
-      setClima("Ensolarado");
-
-      setUmidade("40%");
-
-    }
-
-    else if (cidade.toLowerCase() === "rio grande do sul") {
-
-      setTemperatura("10°G");
-
-      setClima("Parcialmente Nublado");
-
-      setUmidade("90%");
-
-    }
-
-    else if (cidade.toLowerCase() === "foz do iguaçu") {
-
-      setTemperatura("27°G");
-
-      setClima("Ensolarado");
-
-      setUmidade("70%");
-
-    }
-
-    else if (cidade.toLowerCase() === "bahia") {
-
-      setTemperatura("33°G");
-
-      setClima("Ensolarado");
-
-      setUmidade("30%");
-
-    }
-
-    //Executa caso a cidade não esteja cadastrada
-    else {
-
-      setTemperatura("--");
-
-      setClima("Cidade não cadastrada");
-
-      setUmidade("--");
-    }
-  }*/
-
-  //Retorna a interface visual do sistema
   return (
-    // conteiner principal da aplicação
-    <div
-      style={{
-        padding: "20px", // CORRIGIDO: "pedding" -> "padding"
-        fontFamily: "Arial"
-      }}
-    >
-      {/* Titulo Principal */}
-      <h1>☀️Sistema de Previsão do Tempo</h1>
+    <main className={`app-shell weather-${weatherType}`} data-weather={weatherType}>
+      <div className="atmosphere" aria-hidden="true">
+        <span className="celestial" />
+        <span className="horizon" />
+      </div>
 
-      {/*Campo para digitação */}
-      <input
+      <header className="topbar">
+        <a className="wordmark" href="/" aria-label="Atmos — início">
+          <span className="wordmark-icon" aria-hidden="true">A</span>
+          <span>ATMOS</span>
+        </a>
+        <span className="topbar-note">CLIMA, EM TEMPO REAL</span>
+      </header>
 
-        //Tipo de campo
-        type="text"
+      <section className="weather-layout">
+        <div className="intro">
+          <p className="eyebrow">SEU TEMPO, EM OUTRO RITMO</p>
+          <h1>O céu de cada lugar.</h1>
+          <p className="intro-copy">
+            Uma nova perspectiva sobre o clima, onde quer que você esteja.
+          </p>
 
-        //Texto exibido dentro da caixa
-        placeholder="Digite uma cidade"
+          <form className="search-form" onSubmit={ConsultarClima}>
+            <label className="search-label" htmlFor="cidade">Descubra uma cidade</label>
+            <div className="search-control">
+              <span className="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle cx="10.8" cy="10.8" r="6.8" />
+                  <path d="m16 16 4.2 4.2" />
+                </svg>
+              </span>
+              <input
+                id="cidade"
+                type="text"
+                placeholder="Ex.: Lisboa, Portugal"
+                value={cidade}
+                onChange={(event) => setCidade(event.target.value)}
+                autoComplete="off"
+              />
+              <button type="submit" disabled={carregando}>
+                {carregando ? "Buscando" : "Explorar"}
+                {!carregando && <span aria-hidden="true">↗</span>}
+              </button>
+            </div>
+            {erro && <p className="error-message" role="alert">{erro}</p>}
+          </form>
+        </div>
 
-        //Valor vinculado ao estado cidade
-        value={cidade}
+        {cidadeConsultada ? (
+          <article className="weather-card" aria-live="polite">
+            <div className="card-topline">
+              <span className="live-indicator"><span /> AGORA</span>
+              <span className="card-location">{cidadeConsultada}</span>
+            </div>
+            <div className="current-weather">
+              <div>
+                <p className="weather-caption">CONDIÇÃO ATUAL</p>
+                <p className="condition">{clima}</p>
+              </div>
+              <p className="temperature">{temperatura}<span>°C</span></p>
+            </div>
+            <div className="card-divider" />
+            <div className="weather-detail">
+              <span className="detail-mark" aria-hidden="true">◌</span>
+              <span>Umidade</span>
+              <strong>{umidade}</strong>
+            </div>
+            <p className="card-footnote">Uma pequena pausa para sentir o momento.</p>
+          </article>
+        ) : (
+          <div className="empty-note">
+            <span className="empty-line" />
+            <p>Comece por uma cidade.<br />O cenário acompanha o céu.</p>
+          </div>
+        )}
+      </section>
 
-        //Atualiza o estado quando o usuario digita
-        onChange={(e) => setCidade(e.target.value)}
-      />
-      {/*Botão de consulta */}
-      <button
-
-        //Execulta a função ConsultarClima
-        //CORRIGIDO: "consultarClima" (c minúsculo) -> "ConsultarClima" (C maiúsculo),
-        //igual ao nome da função declarada acima
-        onClick={ConsultarClima}
-
-        // Define a margem a esquerda
-        style={{
-          marginLeft: "10px"
-        }}
-      >
-        {/*Texto exibido no botão */}
-        Consultar
-      </button>
-
-      {/*Linha horizontal para separar seçoes */}
-      <hr />
-
-      {/*Exibe a cidade */}
-      <h2>🏙️Cidade: {cidade}</h2>
-
-      {/*Exibe a temperatura */}
-      <h2>🌡️Temperatura: {temperatura}</h2>
-
-      {/*Exibe o clima */}
-      <h2>⛅Clima: {clima}</h2>
-
-      {/*Exibe a umidade */}
-      <h2>🌬️Umidade: {umidade}</h2>
-
-    </div>
-
+      <footer className="footer">
+        <span>FEITO PARA OLHAR COM CALMA</span>
+        <span>ATMOS <span className="footer-dot">·</span> CLIMA AO SEU REDOR</span>
+      </footer>
+    </main>
   );
 }
 
-//Exporta o componente App para ser utilizado no React
 export default App;
